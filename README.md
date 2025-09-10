@@ -21,3 +21,7 @@ I used a simple array of booth objects in `app.js`:
   booked: false,   // pre-booked/disabled flag
   selected: false  // in-memory selection flag
 }
+
+### Updates
+- Improved mobile responsiveness for floor grid and cart layout 
+
