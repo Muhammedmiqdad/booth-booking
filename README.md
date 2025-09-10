@@ -1,4 +1,6 @@
 # Booth Booking Grid
+Live demo:https://muhammedmiqdad.github.io/booth-booking/
+
 Mini test project — interactive booth booking grid in plain HTML, CSS, and JavaScript.
 
 ## What I built
