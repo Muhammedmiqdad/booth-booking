@@ -1,0 +1,175 @@
+:root{
+  --gap: 10px;
+  --booth-size: 90px;
+  --accent: #2563eb;
+  --muted: #f3f4f6;
+  --booked: #e5e7eb;
+  --selected: #fef3c7;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  margin:0;
+  padding:20px;
+  background: #ffffff;
+  color:#111827;
+  line-height:1.4;
+}
+
+header h1{margin:0;font-size:1.4rem}
+.lead{color:#374151;margin-top:6px;margin-bottom:18px}
+
+main{
+  display:grid;
+  grid-template-columns: 1fr 320px;
+  gap:20px;
+  align-items:start;
+}
+
+/* Tablet screens */
+@media (max-width: 900px){
+  main{grid-template-columns: 1fr; gap:16px;}
+  #cart-section{order:2}
+  .floor-grid{grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));}
+}
+
+/* Mobile screens */
+@media (max-width: 600px){
+  body{padding:12px;}
+  header h1{font-size:1.2rem;}
+  .booth{min-width:70px; min-height:70px;}
+  .overlay .price{font-size:0.85rem;}
+  .add-btn{padding:4px 6px; font-size:0.75rem;}
+  .cart{font-size:0.9rem;}
+  .cart-item{flex-direction:column; align-items:flex-start; gap:4px;}
+}
+
+/* Floor grid */
+.floor-grid{
+  display:grid;
+  gap:var(--gap);
+  background: linear-gradient(180deg,#fff,#f9fafb);
+  padding:12px;
+  border-radius:8px;
+  border:1px solid #e5e7eb;
+}
+
+/* Booth */
+.booth{
+  position:relative;
+  min-height:var(--booth-size);
+  min-width:var(--booth-size);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:6px;
+  background:white;
+  border:1px solid #e6eef8;
+  box-shadow: 0 1px 0 rgba(2,6,23,0.02);
+  cursor:pointer;
+  transition:transform .15s ease, box-shadow .15s ease;
+  overflow:hidden;
+}
+.booth:focus-within{outline:3px solid rgba(37,99,235,0.12)}
+.booth:hover{transform:translateY(-4px); box-shadow:0 6px 18px rgba(16,24,40,0.06)}
+
+.booth-label{font-weight:600; font-size:0.95rem; color:#0f172a; z-index:1; pointer-events:none}
+.overlay{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.75));
+  opacity:0;
+  transform:translateY(8px);
+  transition:opacity .18s ease, transform .18s ease;
+  text-align:center;
+  padding:8px;
+}
+.booth:hover .overlay, .booth.selected .overlay { opacity:1; transform:translateY(0); }
+
+.price{font-weight:700; font-size:0.95rem}
+.add-btn{
+  background:var(--accent);
+  color:white;
+  border:0;
+  padding:6px 8px;
+  border-radius:6px;
+  cursor:pointer;
+  font-size:0.85rem;
+}
+.add-btn:disabled{background:#9ca3af; cursor:not-allowed; opacity:0.9}
+
+/* Booked style */
+.booth.booked{
+  background:var(--booked);
+  color:#6b7280;
+  cursor:not-allowed;
+  transform:none;
+  box-shadow:none;
+}
+.booked-badge{
+  position:absolute;
+  top:6px;
+  right:6px;
+  background:#ef4444;
+  color:white;
+  padding:3px 6px;
+  border-radius:4px;
+  font-size:0.72rem;
+  font-weight:700;
+  z-index:2;
+}
+
+/* selected */
+.booth.selected{ background:var(--selected); border:1px dashed #f59e0b;}
+
+/* Cart */
+.cart{
+  background:#fff;
+  padding:12px;
+  border-radius:8px;
+  border:1px solid #e5e7eb;
+  box-shadow:0 1px 0 rgba(2,6,23,0.02);
+  min-height:120px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.cart-list{list-style:none;padding:0;margin:0;max-height:260px;overflow:auto}
+.cart-item{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:8px;
+  border-radius:6px;
+  background:var(--muted);
+  margin-bottom:6px;
+  font-weight:600;
+}
+.remove-btn{
+  background:transparent;border:0;color:#ef4444;cursor:pointer;font-weight:700;
+}
+.cart-footer{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.cart-total{font-weight:800;font-size:1.05rem}
+.btn{background:#111827;color:white;padding:8px 10px;border-radius:6px;border:0;cursor:pointer}
+
+/* Notice */
+#notice{
+  position:fixed;
+  left:50%;
+  transform:translateX(-50%);
+  bottom:26px;
+  background:#111827;color:white;padding:8px 12px;border-radius:8px;opacity:0;pointer-events:none;
+  transition:opacity .2s ease, transform .2s ease;
+}
+#notice.show{opacity:1; transform:translateX(-50%) translateY(-6px); pointer-events:auto}
+
+/* Total pulse */
+@keyframes pulseScale { 0%{transform:scale(1)} 50%{transform:scale(1.08)} 100%{transform:scale(1)} }
+#total-price.pulse{ animation: pulseScale .3s ease; display:inline-block; }
