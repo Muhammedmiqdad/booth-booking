@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Booth Booking Grid — Mini Test</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Booth Booking Grid</h1>
+    <p class="lead">
+      Choose your ideal booth with ease — view pricing instantly and secure your spot in just one click. 
+      Pre-booked booths are clearly marked to save you time and ensure a smooth booking experience.
+    </p>
+  </header>
+
+  <main>
+    <section id="floor-section" aria-label="Floor plan">
+      <h2>Floor Plan</h2>
+      <div id="floor" class="floor-grid" role="list" aria-live="polite"></div>
+    </section>
+
+    <section id="cart-section" aria-label="Booking cart">
+      <h2>Booking Cart</h2>
+      <div id="cart" class="cart" role="region" aria-label="Selected booths">
+        <ul id="cart-items" class="cart-list" aria-live="polite"></ul>
+        <div class="cart-footer">
+          <div class="cart-total">Total: <span id="total-price">0</span> KWD</div>
+          <button id="clear-cart" class="btn">Clear Cart</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
