@@ -1,5 +1,7 @@
 # Booth Booking Grid
-Live demo:https://muhammedmiqdad.github.io/booth-booking/
+Live demos:  
+- Version 1 (original submission): https://Muhammedmiqdad.github.io/booth-booking/  
+- Version 2 (improved version): https://Muhammedmiqdad.github.io/booth-booking/v2/  
 
 Mini test project — interactive booth booking grid in plain HTML, CSS, and JavaScript.
 
@@ -12,6 +14,15 @@ A small, accessible interactive floor plan with a booking cart implemented using
 - `app.js` — main application logic (rendering booths, cart management, accessibility features).
 - `README.md` — this file.
 
+### Updates
+- Improved mobile responsiveness for floor grid and cart layout 
+
+## Improvements in Version 2
+- Cart state is saved in localStorage (persists after reload).  
+- Added ARIA attributes and keyboard navigation (Enter, Space, Arrow keys).  
+- Polished responsive UI design system.  
+- Enhanced accessibility and user experience.
+
 ## Data structure overview
 I used a simple array of booth objects in `app.js`:
 ```js
@@ -22,6 +33,5 @@ I used a simple array of booth objects in `app.js`:
   selected: false  // in-memory selection flag
 }
 
-### Updates
-- Improved mobile responsiveness for floor grid and cart layout 
+
 
