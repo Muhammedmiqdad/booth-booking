@@ -1,14 +1,14 @@
-/* v2 app.js — improved UI/UX, localStorage, keyboard nav, ARIA */
+/* v2.1 app.js — polished UI/UX, localStorage, keyboard nav, ARIA, and conversion micro-interactions */
 (function(){
   const ROWS = ['A','B','C','D'];
   const COLS = 6;
-  const preBooked = ['A2','B5','C3','D1'];
+  const preBooked = ['A2','B5','C3','D1']; // same demo booked set
 
   const booths = [];
   for (let r=0;r<ROWS.length;r++){
     for (let c=1;c<=COLS;c++){
       const id = `${ROWS[r]}${c}`;
-      const price = 50 + (r*5) + (c*3); // deterministic price
+      const price = 50 + (r*5) + (c*3); // deterministic pricing
       booths.push({ id, price, booked: preBooked.includes(id), selected:false });
     }
   }
@@ -21,11 +21,38 @@
   const checkoutBtn = document.getElementById('checkout');
   const noticeEl = document.getElementById('notice');
   const cartCountEl = document.getElementById('cart-count');
+  const availableCountEl = document.getElementById('available-count');
 
   let cart = [];
 
-  // helpers
-  const fmt = (n) => (Number(n).toFixed(3)); // show 3 decimals for KWD
+  const fmt = (n) => Number(n).toFixed(3);
+
+  // persistence
+  function loadCart(){
+    try {
+      const raw = localStorage.getItem('booth_booking_cart_v2');
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return;
+      cart = parsed;
+      cart.forEach(i => {
+        const b = booths.find(x => x.id === i.id);
+        if (b) b.selected = true;
+      });
+    } catch (e) {
+      // ignore
+    }
+  }
+  function saveCart(){
+    try { localStorage.setItem('booth_booking_cart_v2', JSON.stringify(cart)); } catch(e){}
+  }
+
+  // availability
+  function updateAvailableCount(){
+    const totalAvailable = booths.filter(b => !b.booked).length;
+    const currentlyAvailable = booths.filter(b => !b.booked && !cart.some(ci => ci.id === b.id)).length;
+    if (availableCountEl) availableCountEl.textContent = `${currentlyAvailable} of ${totalAvailable} booths available`;
+  }
 
   function showNotice(msg){
     if (!noticeEl) return;
@@ -39,31 +66,7 @@
     }, 1600);
   }
 
-  // localStorage
-  function loadCart(){
-    try {
-      const raw = localStorage.getItem('booth_booking_cart_v2');
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return;
-      cart = parsed;
-      cart.forEach(i => {
-        const b = booths.find(x => x.id === i.id);
-        if (b) b.selected = true;
-      });
-    } catch (e) {
-      console.warn('loadCart failed', e);
-    }
-  }
-  function saveCart(){
-    try {
-      localStorage.setItem('booth_booking_cart_v2', JSON.stringify(cart));
-    } catch (e) {
-      console.warn('saveCart failed', e);
-    }
-  }
-
-  // render floor (purely DOM; CSS handles grid layout)
+  // render floor (CSS handles grid columns)
   function renderFloor(){
     floorEl.innerHTML = '';
     booths.forEach((b, idx) => {
@@ -113,11 +116,10 @@
       art.appendChild(overlay);
       floorEl.appendChild(art);
 
-      // click focuses and toggles (Enter/Space handled separately)
+      // focus and keyboard
       art.addEventListener('click', function(){
         if (!b.booked) art.focus();
       });
-
       art.addEventListener('keydown', function(e){
         if (b.booked) return;
         if (e.key === 'Enter' || e.key === ' ') {
@@ -128,9 +130,10 @@
     });
 
     enableArrowNavigation();
+    updateAvailableCount();
   }
 
-  // compute current column count from computed grid
+  // compute columns (used by arrow navigation)
   function currentColumns(){
     const style = window.getComputedStyle(floorEl);
     const cols = style.gridTemplateColumns;
@@ -138,7 +141,7 @@
     return cols.split(' ').length;
   }
 
-  // arrow-key navigation
+  // arrow navigation
   function enableArrowNavigation(){
     floorEl.addEventListener('keydown', function(e){
       const active = document.activeElement;
@@ -163,14 +166,15 @@
   function addToCart(id){
     const booth = booths.find(x => x.id === id);
     if (!booth) return;
-    if (booth.booked) { showNotice('This booth is already booked.'); return; }
-    if (cart.some(x => x.id === id)) { showNotice('Booth already in cart.'); return; }
+    if (booth.booked){ showNotice('This booth is already booked.'); return; }
+    if (cart.some(x => x.id === id)){ showNotice('Booth already in cart.'); return; }
 
     booth.selected = true;
     cart.push({ id: booth.id, price: booth.price });
     updateUIAfterSelection(booth.id, true);
     updateCart();
     saveCart();
+    pulseAdded(booth.id);
     showNotice(`${booth.id} added`);
   }
 
@@ -202,11 +206,11 @@
     cartItemsEl.innerHTML = '';
     cart.forEach(item => {
       const li = document.createElement('li');
-      li.className = 'cart-item';
+      li.className = 'cart-item slide-in';
       li.setAttribute('role','listitem');
 
       const left = document.createElement('div');
-      left.textContent = `${item.id}`;
+      left.textContent = item.id;
       left.style.fontWeight = '800';
 
       const right = document.createElement('div');
@@ -233,16 +237,17 @@
     const total = cart.reduce((s,i) => s + i.price, 0);
     animateTotal(parseFloat(totalPriceEl.textContent) || 0, total);
 
-    // UI for checkout
     const enabled = cart.length > 0;
     checkoutBtn.disabled = !enabled;
     checkoutBtn.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+    clearCartBtn.style.display = enabled ? 'inline-block' : 'none';
     cartCountEl.textContent = `Cart: ${cart.length}`;
+    updateAvailableCount();
   }
 
-  // numeric animation
+  // total animation with flash
   function animateTotal(oldTotal, newTotal){
-    const duration = 300;
+    const duration = 320;
     const start = performance.now();
     function step(now){
       const t = Math.min((now - start) / duration, 1);
@@ -250,11 +255,22 @@
       totalPriceEl.textContent = Number(val).toFixed(3);
       if (t < 1) requestAnimationFrame(step);
       else {
-        totalPriceEl.classList.add('pulse');
-        setTimeout(()=> totalPriceEl.classList.remove('pulse'), 250);
+        const parent = totalPriceEl.closest('.cart-total') || totalPriceEl.parentElement;
+        if (parent) {
+          parent.classList.add('total-flash');
+          setTimeout(()=> parent.classList.remove('total-flash'), 320);
+        }
       }
     }
     requestAnimationFrame(step);
+  }
+
+  // visual pulse on booth when added
+  function pulseAdded(id){
+    const el = floorEl.querySelector(`.booth[data-id="${id}"]`);
+    if (!el) return;
+    el.classList.add('added');
+    setTimeout(()=> el.classList.remove('added'), 420);
   }
 
   // clear & checkout

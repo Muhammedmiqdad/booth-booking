@@ -3,18 +3,27 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Booth Booking Grid — v2</title>
+  <title>Booth Booking Grid — v2.1</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="site-header">
+  <!-- Top accent bar for trust + small urgency -->
+  <div class="top-bar">
     <div class="container">
+      <div class="top-bar-inner">Limited availability — secure your booth now</div>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <div class="container header-grid">
       <div class="hero">
         <h1>Booth Booking Grid</h1>
         <p class="lead">Choose your ideal booth with ease — view pricing instantly and secure your spot in just one click. Pre-booked booths are clearly marked to save you time and ensure a smooth booking experience.</p>
       </div>
+
       <div class="meta">
-        <div id="cart-count" aria-live="polite" class="cart-count">Cart: 0</div>
+        <div id="available-count" class="available-count" aria-live="polite">Loading availability...</div>
+        <div id="cart-count" class="cart-count" aria-live="polite">Cart: 0</div>
       </div>
     </div>
   </header>
@@ -29,14 +38,18 @@
       <h2 class="section-title">Booking Cart</h2>
       <div id="cart" class="cart" role="region" aria-label="Selected booths">
         <ul id="cart-items" class="cart-list" role="list" aria-live="polite"></ul>
+
         <div class="cart-footer">
-          <div class="cart-total">Total: <span id="total-price">0.000</span> KWD</div>
+          <div class="cart-left">
+            <div class="cart-total">Total: <span id="total-price">0.000</span> KWD</div>
+            <div class="cart-hint">Pro tip: Use arrow keys to navigate booths and Enter to add.</div>
+          </div>
+
           <div class="cart-actions">
-            <button id="clear-cart" class="btn btn-secondary">Clear Cart</button>
+            <button id="clear-cart" class="btn btn-secondary" style="display:none">Clear Cart</button>
             <button id="checkout" class="btn btn-primary" aria-disabled="true" disabled>Checkout</button>
           </div>
         </div>
-        <div class="cart-hint">Pro tip: Use arrow keys to navigate booths and Enter to add.</div>
       </div>
     </aside>
   </main>
