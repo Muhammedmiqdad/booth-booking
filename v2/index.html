@@ -7,36 +7,41 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header>
-    <h1>Booth Booking Grid</h1>
-    <p class="lead">
-      Choose your ideal booth with ease — view pricing instantly and secure your spot in just one click.
-      Pre-booked booths are clearly marked to save you time and ensure a smooth booking experience.
-    </p>
+  <header class="site-header">
+    <div class="container">
+      <div class="hero">
+        <h1>Booth Booking Grid</h1>
+        <p class="lead">Choose your ideal booth with ease — view pricing instantly and secure your spot in just one click. Pre-booked booths are clearly marked to save you time and ensure a smooth booking experience.</p>
+      </div>
+      <div class="meta">
+        <div id="cart-count" aria-live="polite" class="cart-count">Cart: 0</div>
+      </div>
+    </div>
   </header>
 
-  <main>
+  <main class="container main-grid" id="main-grid">
     <section id="floor-section" aria-label="Floor plan">
-      <h2>Floor Plan</h2>
+      <h2 class="section-title">Floor Plan</h2>
       <div id="floor" class="floor-grid" role="list" aria-live="polite"></div>
     </section>
 
-    <aside id="cart-section" aria-label="Booking cart">
-      <h2>Booking Cart</h2>
+    <aside id="cart-section" aria-label="Booking cart" class="cart-aside">
+      <h2 class="section-title">Booking Cart</h2>
       <div id="cart" class="cart" role="region" aria-label="Selected booths">
         <ul id="cart-items" class="cart-list" role="list" aria-live="polite"></ul>
         <div class="cart-footer">
-          <div class="cart-total">Total: <span id="total-price">0</span> KWD</div>
+          <div class="cart-total">Total: <span id="total-price">0.000</span> KWD</div>
           <div class="cart-actions">
-            <button id="clear-cart" class="btn">Clear Cart</button>
-            <button id="checkout" class="btn btn-primary" aria-disabled="true">Checkout</button>
+            <button id="clear-cart" class="btn btn-secondary">Clear Cart</button>
+            <button id="checkout" class="btn btn-primary" aria-disabled="true" disabled>Checkout</button>
           </div>
         </div>
+        <div class="cart-hint">Pro tip: Use arrow keys to navigate booths and Enter to add.</div>
       </div>
     </aside>
   </main>
 
-  <div id="notice" role="status" aria-live="assertive" class="sr-only"></div>
+  <div id="notice" role="status" aria-live="assertive" class="notice" hidden></div>
 
 
   <script src="app.js"></script>

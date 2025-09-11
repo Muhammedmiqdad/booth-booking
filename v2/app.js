@@ -1,4 +1,4 @@
-/* app.js v2 — localStorage, keyboard nav, ARIA */
+/* v2 app.js — improved UI/UX, localStorage, keyboard nav, ARIA */
 (function(){
   const ROWS = ['A','B','C','D'];
   const COLS = 6;
@@ -8,48 +8,73 @@
   for (let r=0;r<ROWS.length;r++){
     for (let c=1;c<=COLS;c++){
       const id = `${ROWS[r]}${c}`;
-      const price = 50 + (r*5) + (c*3);
+      const price = 50 + (r*5) + (c*3); // deterministic price
       booths.push({ id, price, booked: preBooked.includes(id), selected:false });
     }
   }
 
+  // DOM refs
   const floorEl = document.getElementById('floor');
   const cartItemsEl = document.getElementById('cart-items');
   const totalPriceEl = document.getElementById('total-price');
   const clearCartBtn = document.getElementById('clear-cart');
   const checkoutBtn = document.getElementById('checkout');
   const noticeEl = document.getElementById('notice');
+  const cartCountEl = document.getElementById('cart-count');
 
   let cart = [];
 
-  // Load/Save localStorage
-  function loadCart(){
-    const raw = localStorage.getItem('booth_booking_cart_v2');
-    if (!raw) return;
-    try {
-      cart = JSON.parse(raw);
-      cart.forEach(item => {
-        const b = booths.find(x => x.id === item.id);
-        if (b) b.selected = true;
-      });
-    } catch {}
-  }
-  function saveCart(){
-    localStorage.setItem('booth_booking_cart_v2', JSON.stringify(cart));
+  // helpers
+  const fmt = (n) => (Number(n).toFixed(3)); // show 3 decimals for KWD
+
+  function showNotice(msg){
+    if (!noticeEl) return;
+    noticeEl.textContent = msg;
+    noticeEl.hidden = false;
+    noticeEl.classList.add('show');
+    setTimeout(()=> {
+      noticeEl.classList.remove('show');
+      noticeEl.hidden = true;
+      noticeEl.textContent = '';
+    }, 1600);
   }
 
-  // Render booths
+  // localStorage
+  function loadCart(){
+    try {
+      const raw = localStorage.getItem('booth_booking_cart_v2');
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return;
+      cart = parsed;
+      cart.forEach(i => {
+        const b = booths.find(x => x.id === i.id);
+        if (b) b.selected = true;
+      });
+    } catch (e) {
+      console.warn('loadCart failed', e);
+    }
+  }
+  function saveCart(){
+    try {
+      localStorage.setItem('booth_booking_cart_v2', JSON.stringify(cart));
+    } catch (e) {
+      console.warn('saveCart failed', e);
+    }
+  }
+
+  // render floor (purely DOM; CSS handles grid layout)
   function renderFloor(){
     floorEl.innerHTML = '';
     booths.forEach((b, idx) => {
       const art = document.createElement('article');
-      art.className = 'booth';
+      art.className = 'booth' + (b.booked ? ' booked' : '');
       art.setAttribute('data-id', b.id);
       art.setAttribute('data-index', idx);
+      art.setAttribute('role', 'button');
       art.tabIndex = b.booked ? -1 : 0;
-      art.setAttribute('aria-pressed', b.selected ? 'true':'false');
-
-      if (b.booked) art.classList.add('booked');
+      art.setAttribute('aria-pressed', b.selected ? 'true' : 'false');
+      art.setAttribute('aria-label', `${b.id} booth, ${b.booked ? 'booked' : 'available'}`);
 
       const label = document.createElement('div');
       label.className = 'booth-label';
@@ -60,76 +85,204 @@
 
       const price = document.createElement('div');
       price.className = 'price';
-      price.textContent = `${b.price} KWD`;
+      price.textContent = `${fmt(b.price)} KWD`;
 
       const btn = document.createElement('button');
       btn.className = 'add-btn';
-      btn.textContent = b.selected ? 'Added':'Add Booth';
+      btn.type = 'button';
+      btn.textContent = b.selected ? 'Added' : 'Add Booth';
       btn.disabled = b.booked || b.selected;
-      btn.addEventListener('click', e=>{
+      btn.setAttribute('aria-disabled', btn.disabled ? 'true' : 'false');
+
+      btn.addEventListener('click', function(e){
         e.stopPropagation();
         addToCart(b.id);
       });
 
-      overlay.append(price, btn);
-      art.append(label, overlay);
+      overlay.appendChild(price);
+      overlay.appendChild(btn);
+
+      if (b.booked){
+        const badge = document.createElement('div');
+        badge.className = 'booked-badge';
+        badge.textContent = 'Booked';
+        art.appendChild(badge);
+      }
+
+      art.appendChild(label);
+      art.appendChild(overlay);
       floorEl.appendChild(art);
 
-      art.addEventListener('keydown', e=>{
+      // click focuses and toggles (Enter/Space handled separately)
+      art.addEventListener('click', function(){
+        if (!b.booked) art.focus();
+      });
+
+      art.addEventListener('keydown', function(e){
         if (b.booked) return;
-        if (e.key==='Enter' || e.key===' ') {
+        if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           addToCart(b.id);
         }
       });
     });
+
+    enableArrowNavigation();
   }
 
-  // Cart logic
+  // compute current column count from computed grid
+  function currentColumns(){
+    const style = window.getComputedStyle(floorEl);
+    const cols = style.gridTemplateColumns;
+    if (!cols) return COLS;
+    return cols.split(' ').length;
+  }
+
+  // arrow-key navigation
+  function enableArrowNavigation(){
+    floorEl.addEventListener('keydown', function(e){
+      const active = document.activeElement;
+      if (!active || !active.classList.contains('booth')) return;
+      const idx = parseInt(active.getAttribute('data-index'), 10);
+      const cols = currentColumns();
+      let target = null;
+      if (e.key === 'ArrowRight') target = idx + 1;
+      else if (e.key === 'ArrowLeft') target = idx - 1;
+      else if (e.key === 'ArrowDown') target = idx + cols;
+      else if (e.key === 'ArrowUp') target = idx - cols;
+
+      if (target !== null) {
+        e.preventDefault();
+        const next = floorEl.querySelector(`.booth[data-index="${target}"]`);
+        if (next && !next.classList.contains('booked')) next.focus();
+      }
+    }, true);
+  }
+
+  // cart operations
   function addToCart(id){
-    const booth = booths.find(x=>x.id===id);
-    if (!booth || booth.booked) return;
-    if (cart.some(x=>x.id===id)) return;
+    const booth = booths.find(x => x.id === id);
+    if (!booth) return;
+    if (booth.booked) { showNotice('This booth is already booked.'); return; }
+    if (cart.some(x => x.id === id)) { showNotice('Booth already in cart.'); return; }
+
     booth.selected = true;
-    cart.push({id:booth.id, price:booth.price});
+    cart.push({ id: booth.id, price: booth.price });
+    updateUIAfterSelection(booth.id, true);
     updateCart();
     saveCart();
+    showNotice(`${booth.id} added`);
   }
+
   function removeFromCart(id){
-    cart = cart.filter(x=>x.id!==id);
-    const booth = booths.find(x=>x.id===id);
-    if (booth) booth.selected=false;
+    cart = cart.filter(x => x.id !== id);
+    const booth = booths.find(x => x.id === id);
+    if (booth) {
+      booth.selected = false;
+      updateUIAfterSelection(id, false);
+    }
     updateCart();
     saveCart();
+    showNotice(`${id} removed`);
   }
+
+  function updateUIAfterSelection(id, selected){
+    const art = floorEl.querySelector(`.booth[data-id="${id}"]`);
+    if (!art) return;
+    art.setAttribute('aria-pressed', selected ? 'true' : 'false');
+    const btn = art.querySelector('.add-btn');
+    if (btn) {
+      btn.disabled = selected;
+      btn.setAttribute('aria-disabled', selected ? 'true' : 'false');
+      btn.textContent = selected ? 'Added' : 'Add Booth';
+    }
+  }
+
   function updateCart(){
     cartItemsEl.innerHTML = '';
-    cart.forEach(item=>{
+    cart.forEach(item => {
       const li = document.createElement('li');
-      li.className='cart-item';
-      li.textContent=`${item.id} — ${item.price} KWD`;
-      const rem=document.createElement('button');
-      rem.className='remove-btn';
-      rem.textContent='Remove';
-      rem.onclick=()=>removeFromCart(item.id);
-      li.appendChild(rem);
+      li.className = 'cart-item';
+      li.setAttribute('role','listitem');
+
+      const left = document.createElement('div');
+      left.textContent = `${item.id}`;
+      left.style.fontWeight = '800';
+
+      const right = document.createElement('div');
+      right.textContent = `${fmt(item.price)} KWD`;
+
+      const rem = document.createElement('button');
+      rem.className = 'remove-btn';
+      rem.textContent = 'Remove';
+      rem.onclick = () => removeFromCart(item.id);
+
+      const wrapper = document.createElement('div');
+      wrapper.style.display = 'flex';
+      wrapper.style.alignItems = 'center';
+      wrapper.style.gap = '12px';
+      wrapper.appendChild(right);
+      wrapper.appendChild(rem);
+
+      li.appendChild(left);
+      li.appendChild(wrapper);
+
       cartItemsEl.appendChild(li);
     });
-    const total = cart.reduce((s,i)=>s+i.price,0);
-    totalPriceEl.textContent=total;
+
+    const total = cart.reduce((s,i) => s + i.price, 0);
+    animateTotal(parseFloat(totalPriceEl.textContent) || 0, total);
+
+    // UI for checkout
+    const enabled = cart.length > 0;
+    checkoutBtn.disabled = !enabled;
+    checkoutBtn.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+    cartCountEl.textContent = `Cart: ${cart.length}`;
   }
 
-  clearCartBtn.onclick=()=>{
-    cart=[]; booths.forEach(b=>b.selected=false);
-    updateCart(); saveCart();
-  };
-  checkoutBtn.onclick=()=>{
-    if(cart.length){ alert('Checkout simulated!'); cart=[]; booths.forEach(b=>b.selected=false); updateCart(); saveCart();}
-  };
+  // numeric animation
+  function animateTotal(oldTotal, newTotal){
+    const duration = 300;
+    const start = performance.now();
+    function step(now){
+      const t = Math.min((now - start) / duration, 1);
+      const val = oldTotal + (newTotal - oldTotal) * t;
+      totalPriceEl.textContent = Number(val).toFixed(3);
+      if (t < 1) requestAnimationFrame(step);
+      else {
+        totalPriceEl.classList.add('pulse');
+        setTimeout(()=> totalPriceEl.classList.remove('pulse'), 250);
+      }
+    }
+    requestAnimationFrame(step);
+  }
 
-  document.addEventListener('DOMContentLoaded', ()=>{
+  // clear & checkout
+  clearCartBtn.addEventListener('click', ()=> {
+    if (cart.length === 0) { showNotice('Cart already empty'); return; }
+    cart = [];
+    booths.forEach(b => b.selected = false);
+    document.querySelectorAll('.booth[aria-pressed="true"]').forEach(el => el.setAttribute('aria-pressed','false'));
+    updateCart();
+    saveCart();
+    showNotice('Cart cleared');
+  });
+
+  checkoutBtn.addEventListener('click', ()=> {
+    if (cart.length === 0) { showNotice('No items to checkout'); return; }
+    // placeholder behaviour: simulate checkout
+    showNotice('Checkout simulated — thank you.');
+    cart = [];
+    booths.forEach(b => b.selected = false);
+    updateCart();
+    saveCart();
+  });
+
+  // init
+  document.addEventListener('DOMContentLoaded', ()=> {
     loadCart();
     renderFloor();
     updateCart();
   });
+
 })();
